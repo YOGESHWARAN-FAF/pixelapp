@@ -40,7 +40,7 @@ export const AppProvider = ({ children }) => {
         localStorage.setItem('ip', ip);
         localStorage.setItem('port', port);
         localStorage.setItem('wsScheme', wsScheme);
-    }, [ip, port]);
+    }, [ip, port, wsScheme]);
 
     // --- Helper Functions ---
 
@@ -88,9 +88,10 @@ export const AppProvider = ({ children }) => {
                 addLog('info', 'WebSocket Connected');
             };
 
-            ws.onclose = () => {
+            ws.onclose = (event) => {
                 setConnectionStatus('Disconnected');
-                addLog('info', 'WebSocket Disconnected');
+                const reason = event && event.reason ? `, reason: ${event.reason}` : '';
+                addLog('info', `WebSocket Disconnected (code: ${event && event.code ? event.code : 'unknown'}${reason})`);
             };
 
             ws.onerror = (err) => {
@@ -113,7 +114,7 @@ export const AppProvider = ({ children }) => {
             setConnectionStatus('Disconnected');
             addLog('error', `Connection failed: ${e.message}`);
         }
-    }, [ip, port, addLog]);
+    }, [ip, port, wsScheme, addLog]);
 
     const disconnect = useCallback(() => {
         if (socketRef.current) {
