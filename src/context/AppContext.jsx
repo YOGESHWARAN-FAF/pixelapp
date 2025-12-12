@@ -57,10 +57,13 @@ export const AppProvider = ({ children }) => {
         }
 
         setConnectionStatus('Connecting...');
-        addLog('info', `Connecting to ws://${ip}:${port}/...`);
+
+        // Choose secure websocket when the page is served over HTTPS
+        const scheme = (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:') ? 'wss' : 'ws';
+        addLog('info', `Connecting to ${scheme}://${ip}:${port}/...`);
 
         try {
-            const ws = new WebSocket(`ws://${ip}:${port}/`);
+            const ws = new WebSocket(`${scheme}://${ip}:${port}/`);
 
             ws.onopen = () => {
                 setConnectionStatus('Connected');
