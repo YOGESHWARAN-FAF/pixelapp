@@ -11,6 +11,8 @@ export const AppProvider = ({ children }) => {
     const [matrixHeight, setMatrixHeight] = useState(() => parseInt(localStorage.getItem('matrixHeight')) || 10);
     const [ip, setIp] = useState(() => localStorage.getItem('ip') || '192.168.4.1');
     const [port, setPort] = useState(() => localStorage.getItem('port') || '81');
+    // 'auto' | 'ws' | 'wss' - when 'auto' we pick based on page protocol
+    const [wsScheme, setWsScheme] = useState(() => localStorage.getItem('wsScheme') || 'auto');
 
     // --- Runtime State ---
     const [matrix, setMatrix] = useState(createEmptyMatrix(matrixWidth, matrixHeight));
@@ -37,6 +39,7 @@ export const AppProvider = ({ children }) => {
     useEffect(() => {
         localStorage.setItem('ip', ip);
         localStorage.setItem('port', port);
+        localStorage.setItem('wsScheme', wsScheme);
     }, [ip, port]);
 
     // --- Helper Functions ---
@@ -58,11 +61,26 @@ export const AppProvider = ({ children }) => {
 
         setConnectionStatus('Connecting...');
 
-        // Choose secure websocket when the page is served over HTTPS
-        const scheme = (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:') ? 'wss' : 'ws';
+        // Determine scheme: honor explicit choice, otherwise auto-select based on page protocol
+        const pageIsSecure = (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:');
+        let scheme = 'ws';
+        if (wsScheme === 'auto') {
+            scheme = pageIsSecure ? 'wss' : 'ws';
+        } else {
+            scheme = wsScheme;
+        }
+
         addLog('info', `Connecting to ${scheme}://${ip}:${port}/...`);
 
         try {
+            // If the page is secure but user explicitly selected 'ws', warn and avoid connecting
+            if (pageIsSecure && scheme === 'ws') {
+                const msg = 'Blocked: page is HTTPS but connection scheme is ws:// — mixed-content is disallowed. Choose wss or host backend with TLS.';
+                addLog('error', msg);
+                setConnectionStatus('Disconnected');
+                return;
+            }
+
             const ws = new WebSocket(`${scheme}://${ip}:${port}/`);
 
             ws.onopen = () => {
@@ -78,7 +96,12 @@ export const AppProvider = ({ children }) => {
             ws.onerror = (err) => {
                 console.error("WS Error", err);
                 setConnectionStatus('Disconnected');
-                addLog('error', 'WebSocket Error');
+                // Provide a helpful hint when wss failed from an HTTPS page
+                if (scheme === 'wss' && pageIsSecure) {
+                    addLog('error', 'WebSocket Error: failed to establish secure (wss) connection. Ensure the server supports TLS/wss or host a proxy with TLS.');
+                } else {
+                    addLog('error', `WebSocket Error: ${err && err.message ? err.message : 'unknown'}`);
+                }
             };
 
             ws.onmessage = (event) => {
