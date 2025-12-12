@@ -1,7 +1,7 @@
 
 import React from 'react';
 import {
-    Home, Settings, Wifi, Grid3X3, Type, Palette, Layers, FileText, Info, X
+    Home, Settings, Wifi, Grid3X3, Type, Palette, Layers, FileText, Info, X, Sparkles
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose, activePage, onNavigate }) => {
@@ -13,6 +13,7 @@ const Sidebar = ({ isOpen, onClose, activePage, onNavigate }) => {
         { id: 'text', label: 'Text Only', icon: Type },
         { id: 'design', label: 'Design Only', icon: Palette },
         { id: 'combo', label: 'Text + Design', icon: Layers },
+        { id: 'ai-designer', label: 'AI Designer', icon: Sparkles },
         { id: 'logs', label: 'Logs / Debug', icon: FileText },
         { id: 'about', label: 'About', icon: Info },
     ];

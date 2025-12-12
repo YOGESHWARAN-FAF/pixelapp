@@ -11,6 +11,7 @@ import DesignPage from './pages/DesignPage';
 import ComboPage from './pages/ComboPage';
 import LogsPage from './pages/LogsPage';
 import AboutPage from './pages/AboutPage';
+import AiDesignerPage from './pages/AiDesignerPage';
 import './index.css';
 
 const AppContent = () => {
@@ -26,6 +27,7 @@ const AppContent = () => {
       case 'design': return <DesignPage />;
       case 'combo': return <ComboPage />;
       case 'logs': return <LogsPage />;
+      case 'ai-designer': return <AiDesignerPage />;
       case 'about': return <AboutPage />;
       default: return <HomePage onNavigate={setActivePage} />;
     }

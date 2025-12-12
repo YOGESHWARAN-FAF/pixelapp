@@ -42,6 +42,35 @@ export const AppProvider = ({ children }) => {
         localStorage.setItem('wsScheme', wsScheme);
     }, [ip, port, wsScheme]);
 
+    // --- Custom Patterns ---
+    const [customPatterns, setCustomPatterns] = useState(() => {
+        try {
+            const saved = localStorage.getItem('customPatterns');
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            return {};
+        }
+    });
+
+    useEffect(() => {
+        localStorage.setItem('customPatterns', JSON.stringify(customPatterns));
+    }, [customPatterns]);
+
+    const addCustomPattern = (name, matrixData) => {
+        setCustomPatterns(prev => ({
+            ...prev,
+            [name]: matrixData
+        }));
+    };
+
+    const deleteCustomPattern = (name) => {
+        setCustomPatterns(prev => {
+            const next = { ...prev };
+            delete next[name];
+            return next;
+        });
+    };
+
     // --- Helper Functions ---
 
     const addLog = useCallback((type, message) => {
@@ -141,7 +170,7 @@ export const AppProvider = ({ children }) => {
 
     const stopAnimation = useCallback(() => {
         if (animationRef.current) {
-            clearInterval(animationRef.current);
+            cancelAnimationFrame(animationRef.current);
             animationRef.current = null;
         }
         setAnimationMode(null);
@@ -156,38 +185,60 @@ export const AppProvider = ({ children }) => {
         offsetRef.current = 0;
 
         const speed = params.speed || 50;
-        const intervalMs = 1000 / Math.max(1, speed);
+        // Map speed (1-100) to FPS (1-60)
+        // Speed 1 = 1 FPS, Speed 50 = 15 FPS, Speed 100 = 60 FPS
+        // This mapping can be adjusted for better feel
+        let targetFps = 1;
+        if (speed <= 50) {
+            targetFps = 1 + (speed - 1) * (14 / 49); // 1 to 15
+        } else {
+            targetFps = 15 + (speed - 50) * (45 / 50); // 15 to 60
+        }
 
-        animationRef.current = setInterval(() => {
-            offsetRef.current += 1;
-            let frame = null;
+        const intervalMs = 1000 / targetFps;
+        let lastFrameTime = 0;
 
-            if (mode === 'design') {
-                frame = generateDesignFrame(params, offsetRef.current, matrixWidth, matrixHeight);
-            } else if (mode === 'text') {
-                frame = generateTextFrame(params, offsetRef.current, matrixWidth, matrixHeight);
-            } else if (mode === 'combo') {
-                frame = generateComboFrame(params, offsetRef.current, matrixWidth, matrixHeight);
-            }
+        const loop = (timestamp) => {
+            if (!lastFrameTime) lastFrameTime = timestamp;
+            const elapsed = timestamp - lastFrameTime;
 
-            if (frame) {
-                updateMatrix(frame);
-                if (sendOverWs) {
-                    sendFrame({
-                        cmd: "matrix",
-                        matrixWidth,
-                        matrixHeight,
-                        direction: params.direction,
-                        speed: params.speed,
-                        brightness: params.brightness,
-                        dataType: mode,
-                        ...params, // Spread other params like pattern, text, colors
-                        frames: [{ data: frame }]
-                    });
+            if (elapsed >= intervalMs) {
+                lastFrameTime = timestamp - (elapsed % intervalMs); // Adjust for drift
+
+                offsetRef.current += 1;
+                let frame = null;
+
+                if (mode === 'design') {
+                    frame = generateDesignFrame(params, offsetRef.current, matrixWidth, matrixHeight, customPatterns);
+                } else if (mode === 'text') {
+                    frame = generateTextFrame(params, offsetRef.current, matrixWidth, matrixHeight);
+                } else if (mode === 'combo') {
+                    frame = generateComboFrame(params, offsetRef.current, matrixWidth, matrixHeight);
+                }
+
+                if (frame) {
+                    updateMatrix(frame);
+                    if (sendOverWs) {
+                        sendFrame({
+                            cmd: "matrix",
+                            matrixWidth,
+                            matrixHeight,
+                            direction: params.direction,
+                            speed: params.speed,
+                            brightness: params.brightness,
+                            dataType: mode,
+                            ...params, // Spread other params like pattern, text, colors
+                            frames: [{ data: frame }]
+                        });
+                    }
                 }
             }
-        }, intervalMs);
-    }, [matrixWidth, matrixHeight, sendFrame, stopAnimation]);
+
+            animationRef.current = requestAnimationFrame(loop);
+        };
+
+        animationRef.current = requestAnimationFrame(loop);
+    }, [matrixWidth, matrixHeight, sendFrame, stopAnimation, customPatterns]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -206,7 +257,8 @@ export const AppProvider = ({ children }) => {
             logs, addLog, clearLogs,
             sendFrame,
             // Animation exports
-            startAnimation, stopAnimation, isSending, animationMode
+            startAnimation, stopAnimation, isSending, animationMode,
+            customPatterns, addCustomPattern, deleteCustomPattern
         }}>
             {children}
         </AppContext.Provider>

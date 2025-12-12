@@ -1,10 +1,30 @@
 import { generatePattern, textToMatrix, hexToNearestColorChar, createEmptyMatrix } from './matrixUtils';
 
-export const generateDesignFrame = (params, offset, matrixWidth, matrixHeight) => {
+export const generateDesignFrame = (params, offset, matrixWidth, matrixHeight, customPatterns = {}) => {
     const { pattern, colorHex, useAutoColor, direction } = params;
     const colorChar = hexToNearestColorChar(colorHex);
 
-    let matrix = generatePattern(pattern, colorChar, matrixWidth, matrixHeight, useAutoColor);
+    let matrix;
+    if (customPatterns && customPatterns[pattern]) {
+        // Use custom pattern directly
+        // Assuming custom pattern is already scaled or user accepts it as is
+        // We might want to scale it if dimensions mismatch, but for now let's assume 1:1 or crop/fill
+        // Actually, let's just use it. If it's smaller, it repeats or fills with black?
+        // Let's assume it matches or we just take it.
+        // Ideally we should resize it to current matrixWidth/Height if possible, but that's complex without a resizer.
+        // Let's just return it, and maybe the renderer handles it? No, renderer expects strings of length width.
+        // So we must ensure it fits.
+        const customData = customPatterns[pattern];
+        // Resize/Crop to fit current dimensions
+        matrix = createEmptyMatrix(matrixWidth, matrixHeight);
+        for (let r = 0; r < Math.min(matrixHeight, customData.length); r++) {
+            const row = customData[r];
+            const targetRow = row.substring(0, matrixWidth).padEnd(matrixWidth, '0');
+            matrix[r] = targetRow;
+        }
+    } else {
+        matrix = generatePattern(pattern, colorChar, matrixWidth, matrixHeight, useAutoColor);
+    }
 
     if (direction !== 'static') {
         const newMatrix = [...matrix];

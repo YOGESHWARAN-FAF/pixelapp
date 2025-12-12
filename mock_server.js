@@ -1,29 +1,45 @@
 import { WebSocketServer } from 'ws';
+import os from "os";
 
 const PORT = 8080;
 
-const wss = new WebSocketServer({ port: PORT });
+// Get local network IP
+function getLocalIP() {
+    const interfaces = os.networkInterfaces();
+    for (let iface of Object.values(interfaces)) {
+        for (let cfg of iface) {
+            if (cfg.family === "IPv4" && !cfg.internal) {
+                return cfg.address;
+            }
+        }
+    }
+    return "127.0.0.1";
+}
 
-console.log(`Mock ESP32 Server running on ws://localhost:${PORT}`);
+const localIP = getLocalIP();
 
-wss.on('connection', (ws) => {
-    console.log('Client connected');
+// Bind to 0.0.0.0 so LAN devices can access
+const wss = new WebSocketServer({ host: "0.0.0.0", port: PORT });
 
-    ws.send(JSON.stringify({ type: 'info', message: 'Connected to Mock ESP32' }));
+console.log(`Mock ESP32 WebSocket Server running`);
+console.log(`👉 ws://${localIP}:${PORT}`);
 
-    ws.on('message', (message) => {
+wss.on("connection", (ws) => {
+    console.log("Client connected");
+
+    ws.send(JSON.stringify({ 
+        type: "info", 
+        message: "Connected to Mock ESP32" 
+    }));
+
+    ws.on("message", (message) => {
         try {
             const data = JSON.parse(message);
-            console.log('Received:', JSON.stringify(data, null, 2));
-
-            // Echo back or acknowledge if needed
-            // ws.send(JSON.stringify({ type: 'ack', cmd: data.cmd }));
+            console.log("Received:", data);
         } catch (e) {
-            console.log('Received raw:', message.toString());
+            console.log("Raw:", message.toString());
         }
     });
 
-    ws.on('close', () => {
-        console.log('Client disconnected');
-    });
+    ws.on("close", () => console.log("Client disconnected"));
 });

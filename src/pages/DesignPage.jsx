@@ -1,9 +1,10 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Play, Square, Eye } from 'lucide-react';
-import MatrixGrid from '../components/MatrixGrid';
+import MatrixCanvas from '../components/MatrixCanvas';
 
 const PATTERNS = [
+    'plasma', 'fire-real', 'matrix-rain',
     'leaf', 'flower', 'heart', 'smile', 'sad',
     'arrow-left', 'arrow-right', 'arrow-up', 'arrow-down',
     'wave', 'rain', 'fire', 'sparkle', 'star',
@@ -15,7 +16,7 @@ const PATTERNS = [
 
 const DesignPage = () => {
     const {
-        startAnimation, stopAnimation, isSending, animationMode
+        startAnimation, stopAnimation, isSending, animationMode, customPatterns
     } = useContext(AppContext);
 
     const [pattern, setPattern] = useState('heart');
@@ -24,6 +25,11 @@ const DesignPage = () => {
     const [direction, setDirection] = useState('static');
     const [speed, setSpeed] = useState(50);
     const [brightness, setBrightness] = useState(200);
+
+    const allPatterns = [
+        ...Object.keys(customPatterns || {}),
+        ...PATTERNS
+    ];
 
     const handlePreview = () => {
         startAnimation('design', {
@@ -45,7 +51,7 @@ const DesignPage = () => {
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-white">Design Patterns</h2>
 
-            <MatrixGrid />
+            <MatrixCanvas />
 
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 space-y-4">
                 <div>
@@ -55,9 +61,18 @@ const DesignPage = () => {
                         onChange={(e) => setPattern(e.target.value)}
                         className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white outline-none"
                     >
-                        {PATTERNS.map(p => (
-                            <option key={p} value={p}>{p}</option>
-                        ))}
+                        {Object.keys(customPatterns || {}).length > 0 && (
+                            <optgroup label="Custom Patterns">
+                                {Object.keys(customPatterns).map(p => (
+                                    <option key={p} value={p}>{p}</option>
+                                ))}
+                            </optgroup>
+                        )}
+                        <optgroup label="Standard Patterns">
+                            {PATTERNS.map(p => (
+                                <option key={p} value={p}>{p}</option>
+                            ))}
+                        </optgroup>
                     </select>
                 </div>
 

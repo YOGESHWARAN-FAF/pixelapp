@@ -1,7 +1,7 @@
 
 import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
-import MatrixGrid from '../components/MatrixGrid';
+import MatrixCanvas from '../components/MatrixCanvas';
 import { createEmptyMatrix } from '../utils/matrixUtils';
 import { Trash2, RefreshCw, Send } from 'lucide-react';
 
@@ -62,7 +62,7 @@ const SimulatorPage = () => {
                 </div>
             </div>
 
-            <MatrixGrid />
+            <MatrixCanvas />
 
             <div className="grid grid-cols-2 gap-4">
                 <button

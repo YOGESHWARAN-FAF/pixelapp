@@ -2,9 +2,10 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { Play, Square, Eye } from 'lucide-react';
-import MatrixGrid from '../components/MatrixGrid';
+import MatrixCanvas from '../components/MatrixCanvas';
 
 const PATTERNS = [
+    'plasma', 'fire-real', 'matrix-rain',
     'leaf', 'flower', 'heart', 'smile', 'sad',
     'arrow-left', 'arrow-right', 'arrow-up', 'arrow-down',
     'wave', 'rain', 'fire', 'sparkle', 'star',
@@ -49,7 +50,7 @@ const ComboPage = () => {
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-white">Combo Mode</h2>
 
-            <MatrixGrid />
+            <MatrixCanvas />
 
             <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 space-y-4">
 
