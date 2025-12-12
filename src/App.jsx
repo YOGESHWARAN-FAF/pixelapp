@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider } from './context/AppContext';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
@@ -13,9 +13,14 @@ import LogsPage from './pages/LogsPage';
 import AboutPage from './pages/AboutPage';
 import AiDesignerPage from './pages/AiDesignerPage';
 import './index.css';
+import { requestWifiPermissions } from './permissions';
 
 const AppContent = () => {
   const [activePage, setActivePage] = useState('home');
+
+  useEffect(() => {
+    requestWifiPermissions();
+  }, []);
 
   const renderPage = () => {
     switch (activePage) {

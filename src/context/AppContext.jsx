@@ -90,27 +90,13 @@ export const AppProvider = ({ children }) => {
 
         setConnectionStatus('Connecting...');
 
-        // Determine scheme: honor explicit choice, otherwise auto-select based on page protocol
-        const pageIsSecure = (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:');
-        let scheme = 'ws';
-        if (wsScheme === 'auto') {
-            scheme = pageIsSecure ? 'wss' : 'ws';
-        } else {
-            scheme = wsScheme;
-        }
+        // FORCE ws:// always for ESP32 / LAN servers inside Capacitor
+        const url = `ws://${ip}:${port}/`;
 
-        addLog('info', `Connecting to ${scheme}://${ip}:${port}/...`);
+        addLog('info', `Connecting to ${url}...`);
 
         try {
-            // If the page is secure but user explicitly selected 'ws', warn and avoid connecting
-            if (pageIsSecure && scheme === 'ws') {
-                const msg = 'Blocked: page is HTTPS but connection scheme is ws:// — mixed-content is disallowed. Choose wss or host backend with TLS.';
-                addLog('error', msg);
-                setConnectionStatus('Disconnected');
-                return;
-            }
-
-            const ws = new WebSocket(`${scheme}://${ip}:${port}/`);
+            const ws = new WebSocket(url);
 
             ws.onopen = () => {
                 setConnectionStatus('Connected');
